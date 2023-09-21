@@ -94,6 +94,8 @@ class BasicEventSelection : public xAH::Algorithm
     std::string m_prwActualMu2017File = "";
     /// @brief actualMu configuration file for the MC16e campaign (2018). Added to the PRW tool when using PRW autoconfiguration.
     std::string m_prwActualMu2018File = "";
+    /// @brief actualMu configuration file for the MC23a campaign (2022). Added to the PRW tool when using PRW autoconfiguration.
+    std::string m_prwActualMu2022File = "";
     /**
       @rst
       mc16(acd) to bypass the automatic campaign determination from AMI, several campaigns can be separated by a comma. Only used

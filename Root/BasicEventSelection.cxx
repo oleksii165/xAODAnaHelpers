@@ -1140,6 +1140,9 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
     case 310000 :
       mcCampaignMD="mc20e";
       break;
+    case 410000:
+      mcCampaignMD="mc23a";
+      break;
     default :
       ANA_MSG_ERROR( "Could not determine mc campaign from run number! Impossible to autoconfigure PRW. Aborting." );
       return StatusCode::FAILURE;
@@ -1170,7 +1173,7 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
   bool mc20X_GoodFromProperty = !mcCampaignList.empty();
   bool mc20X_GoodFromMetadata = false;
   for(const auto& mcCampaignP : mcCampaignList) mc20X_GoodFromProperty &= ( mcCampaignP == "mc20a" || mcCampaignP == "mc20d" || mcCampaignP == "mc20e");
-  if( mcCampaignMD == "mc20a" || mcCampaignMD == "mc20d" || mcCampaignMD == "mc20e") mc20X_GoodFromMetadata = true;
+  if( mcCampaignMD == "mc20a" || mcCampaignMD == "mc20d" || mcCampaignMD == "mc20e" || mcCampaignMD == "mc23a" ) mc20X_GoodFromMetadata = true;
 
   if( !mc20X_GoodFromMetadata && !mc20X_GoodFromProperty )
     {
@@ -1227,17 +1230,28 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
 
   std::vector<std::string> prwConfigFiles;
   for(const auto& mcCampaign : mcCampaignList)
+  {
+    std::string prwConfigFile = PathResolverFindCalibFile("/dev/PileupReweighting/share/DSID" + std::to_string(DSID_INT/1000) +"xxx/pileup_" + mcCampaign + "_dsid" + std::to_string(DSID_INT) + "_" + SimulationFlavour + ".root");
+    TFile testF(prwConfigFile.data(),"read");
+    if(testF.IsZombie())
     {
-      std::string prwConfigFile = PathResolverFindCalibFile("/dev/PileupReweighting/share/DSID" + std::to_string(DSID_INT/1000) +"xxx/pileup_" + mcCampaign + "_dsid" + std::to_string(DSID_INT) + "_" + SimulationFlavour + ".root");
-      TFile testF(prwConfigFile.data(),"read");
-      if(testF.IsZombie())
-	{
-	  ANA_MSG_ERROR("autoconfigurePileupRWTool(): Missing PRW config file for DSID " << std::to_string(DSID_INT) << " in campaign " << mcCampaign);
-	  return StatusCode::FAILURE;
-	}
-      else
-	prwConfigFiles.push_back( prwConfigFile );
+      ANA_MSG_WARNING("autoconfigurePileupRWTool(): Missing PRW config file for DSID " << std::to_string(DSID_INT) << " in campaign " << mcCampaign);
+      ANA_MSG_WARNING("autoconfigurePileupRWTool(): instead of missing PRW use common one of provided in python config m_PRWFileNames" << m_PRWFileNames);
+      ANA_MSG_WARNING("autoconfigurePileupRWTool(): for this to work m_PRWFileNames must be one file");
+      std::string prwConfigFile2 = PathResolverFindCalibFile(m_PRWFileNames);
+      TFile testF(prwConfigFile2.data(),"read");
+      if(testF.IsZombie()){
+        ANA_MSG_WARNING("autoconfigurePileupRWTool(): trying using PRW "<< m_PRWFileNames << " failed");
+        return StatusCode::FAILURE;
+      }
+      else{
+      ANA_MSG_WARNING("autoconfigurePileupRWTool(): test of using m_PRWFileNames was ok, continue with it");
+      prwConfigFiles.push_back( prwConfigFile2 );
+      }
     }
+    else
+    prwConfigFiles.push_back( prwConfigFile );
+  }
 
   // Add actualMu config files
   for(const auto& mcCampaign : mcCampaignList)
@@ -1248,10 +1262,13 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
 	prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2017File));
       if( !m_prwActualMu2018File.empty() && (mcCampaign == "mc20e" || mcCampaign=="mc20f") )
 	prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2018File));
+      if( !m_prwActualMu2022File.empty() && (mcCampaign == "mc23a") )
+	prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2022File));
     }
 
   // also need to handle lumicalc files: only use 2015+2016 with mc20a
   // and only use 2017 with mc20d and 2018 data with mc20e
+  // use 2022 with mc23a
   // according to instructions on https://twiki.cern.ch/twiki/bin/view/AtlasProtected/ExtendedPileupReweighting#Tool_Properties
 
   // Parse lumicalc file names
@@ -1288,6 +1305,10 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
 	    }
 	  } else if (mcCampaign == "mc20e") {
 	    if (year == "18") {
+	      lumiCalcFiles.push_back(filename);
+	    }
+    } else if (mcCampaign == "mc23a") {
+	    if (year == "22") {
 	      lumiCalcFiles.push_back(filename);
 	    }
 	  } else {
