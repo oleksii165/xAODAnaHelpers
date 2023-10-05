@@ -1143,6 +1143,9 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
     case 410000:
       mcCampaignMD="mc23a";
       break;
+    case 450000:
+      mcCampaignMD="mc23c";
+      break;
     default :
       ANA_MSG_ERROR( "Could not determine mc campaign from run number! Impossible to autoconfigure PRW. Aborting." );
       return StatusCode::FAILURE;
@@ -1173,7 +1176,7 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
   bool mc20X_GoodFromProperty = !mcCampaignList.empty();
   bool mc20X_GoodFromMetadata = false;
   for(const auto& mcCampaignP : mcCampaignList) mc20X_GoodFromProperty &= ( mcCampaignP == "mc20a" || mcCampaignP == "mc20d" || mcCampaignP == "mc20e");
-  if( mcCampaignMD == "mc20a" || mcCampaignMD == "mc20d" || mcCampaignMD == "mc20e" || mcCampaignMD == "mc23a" ) mc20X_GoodFromMetadata = true;
+  if( mcCampaignMD == "mc20a" || mcCampaignMD == "mc20d" || mcCampaignMD == "mc20e" || mcCampaignMD == "mc23a" || mcCampaignMD == "mc23c") mc20X_GoodFromMetadata = true;
 
   if( !mc20X_GoodFromMetadata && !mc20X_GoodFromProperty )
     {
@@ -1256,19 +1259,16 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
   // Add actualMu config files
   for(const auto& mcCampaign : mcCampaignList)
     {
-      if( !m_prwActualMu2016File.empty() && mcCampaign == "mc20a" )
-	prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2016File));
-      if( !m_prwActualMu2017File.empty() && (mcCampaign == "mc20c" || mcCampaign=="mc20d") )
-	prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2017File));
-      if( !m_prwActualMu2018File.empty() && (mcCampaign == "mc20e" || mcCampaign=="mc20f") )
-	prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2018File));
-      if( !m_prwActualMu2022File.empty() && (mcCampaign == "mc23a") )
-	prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2022File));
+      if( !m_prwActualMu2016File.empty() && mcCampaign == "mc20a" ) prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2016File));
+      if( !m_prwActualMu2017File.empty() && (mcCampaign == "mc20c" || mcCampaign=="mc20d") ) prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2017File));
+      if( !m_prwActualMu2018File.empty() && (mcCampaign == "mc20e" || mcCampaign=="mc20f") ) prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2018File));
+      if( !m_prwActualMu2022File.empty() && (mcCampaign == "mc23a") ) prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2022File));
+      if( !m_prwActualMu2023File.empty() && (mcCampaign == "mc23c") ) prwConfigFiles.push_back(PathResolverFindCalibFile(m_prwActualMu2023File));
     }
 
   // also need to handle lumicalc files: only use 2015+2016 with mc20a
   // and only use 2017 with mc20d and 2018 data with mc20e
-  // use 2022 with mc23a
+  // use 2022 with mc23a, 2023 with mc23c
   // according to instructions on https://twiki.cern.ch/twiki/bin/view/AtlasProtected/ExtendedPileupReweighting#Tool_Properties
 
   // Parse lumicalc file names
@@ -1308,9 +1308,13 @@ StatusCode BasicEventSelection::autoconfigurePileupRWTool()
 	      lumiCalcFiles.push_back(filename);
 	    }
     } else if (mcCampaign == "mc23a") {
-	    if (year == "22") {
-	      lumiCalcFiles.push_back(filename);
-	    }
+	    if (year == "22") { 
+        lumiCalcFiles.push_back(filename);
+      }
+	  } else if (mcCampaign == "mc23c") {
+	    if (year == "23") { 
+        lumiCalcFiles.push_back(filename);
+      }
 	  } else {
 	    ANA_MSG_ERROR( "No lumicalc file is suitable for your mc campaign!" );
 	  }
